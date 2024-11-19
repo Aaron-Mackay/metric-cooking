@@ -1,7 +1,7 @@
 "use strict";
 
 function addMetricUnits(text) {
-    return re.replace(text, replaceUnits);
+    return re.replace(text.toLowerCase(), replaceUnits);
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -75,6 +75,7 @@ const ingredients = {
     'mustard': [/\b([Dd]ijon |grainy |whole grain |yellow )*mustard(?! seed)/, 249 / cup_ml], // ~02046~
     'nutella': [/\bNutella/, 1.2], // Wolfram Alpha
     'oats, steel-cut': [/\bsteel[- ]cut oats/, 0.68], // Wolfram Alpha
+    'olive oil': [/\bolive oil/, 200 / cup_ml], // Wolfram Alpha
     'onions, chopped': [/\b(chopped onions?)|(onions?, chopped)/, 160 / cup_ml], // ~11282~
     'orzo': [/\b(whole[- ]wheat )?orzo/, 225 / cup_ml], // estimate from various sources
     'parmesan': [/\b(finely |freshly |grated |shredded |fresh )*([Pp]armesan|[Pp]armigiano[ -][Rr]eggiano|(Pecorino )?[Rr]omano)(\s+cheese)?/, 100 / cup_ml], // ~01032~ (grated), ~01146~ (shredded)
@@ -419,8 +420,8 @@ function replaceUnits(match) {
         }
     }
 
-    if ((newUnit == 'ml' || newUnit == 'g') && newAmount < 4)
-        return newText;
+    // if ((newUnit == 'ml' || newUnit == 'g') && newAmount < 4)
+    //     return newText;
 
     if (newUnit == '°C' && match.group('numWord'))
         return newText;
@@ -455,6 +456,7 @@ function replaceUnits(match) {
 }
 
 const food52 = typeof document !== 'undefined' && location.hostname.match('food52.com');
+const bbcGoodFood = typeof document !== 'undefined' && location.hostname.includes('bbcgoodfood');
 
 function walk(node) {
     switch (node.nodeType) {
@@ -493,11 +495,17 @@ function walk(node) {
 
 function handleNode(textNode) {
     let text = textNode.textContent;
-
     if (text) {
+        if (textNode.nextElementSibling?.tagName === 'A' && bbcGoodFood) {
+          text += textNode.nextElementSibling.textContent
+        }
         const modified = re.replace(text, replaceUnits);
-        if (modified != text)
-            textNode.textContent = modified;
+        if (modified != text) {
+          textNode.textContent = modified;
+          if (textNode.nextElementSibling?.tagName === 'A' && bbcGoodFood) {
+            textNode.nextElementSibling.remove()
+          }
+        }
     }
 }
 
